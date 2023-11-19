@@ -1,10 +1,7 @@
 //
 // Web Headers and caching
 //
-use std::{
-    io::{Cursor, ErrorKind},
-    ops::Deref,
-};
+use std::{io::Cursor, ops::Deref};
 
 use rocket::{
     fairing::{Fairing, Info, Kind},
@@ -335,34 +332,9 @@ impl Fairing for BetterLogging {
 //
 // File handling
 //
-use std::{
-    fs::{self, File},
-    io::Result as IOResult,
-    path::Path,
-};
+use std::{fs, io, path::Path};
 
-pub fn file_exists(path: &str) -> bool {
-    Path::new(path).exists()
-}
-
-pub fn write_file(path: &str, content: &[u8]) -> Result<(), crate::error::Error> {
-    use std::io::Write;
-    let mut f = match File::create(path) {
-        Ok(file) => file,
-        Err(e) => {
-            if e.kind() == ErrorKind::PermissionDenied {
-                error!("Can't create '{}': Permission denied", path);
-            }
-            return Err(From::from(e));
-        }
-    };
-
-    f.write_all(content)?;
-    f.flush()?;
-    Ok(())
-}
-
-pub fn delete_file(path: &str) -> IOResult<()> {
+pub fn delete_file(path: &str) -> io::Result<()> {
     let res = fs::remove_file(path);
 
     if let Some(parent) = Path::new(path).parent() {

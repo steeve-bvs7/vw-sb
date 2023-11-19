@@ -1131,9 +1131,6 @@ impl Config {
     pub fn private_rsa_key(&self) -> String {
         format!("{}.pem", CONFIG.rsa_key_filename())
     }
-    pub fn public_rsa_key(&self) -> String {
-        format!("{}.pub.pem", CONFIG.rsa_key_filename())
-    }
     pub fn mail_enabled(&self) -> bool {
         let inner = &self.inner.read().unwrap().config;
         inner._enable_smtp && (inner.smtp_host.is_some() || inner.use_sendmail)
