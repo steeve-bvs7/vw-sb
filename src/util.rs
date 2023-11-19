@@ -835,16 +835,18 @@ mod dns_resolver {
 
         // Note that we get an iterator of addresses, but we only grab the first one for convenience
         async fn resolve_domain(&self, name: &str) -> Result<Option<SocketAddr>, BoxError> {
-            match self {
-                Self::Default() => {
-                    let mut lookup = tokio::net::lookup_host(name).await?;
-                    Ok(lookup.next())
-                }
-                Self::Hickory(resolver) => {
-                    let lookup = resolver.lookup_ip(name).await?;
-                    Ok(lookup.into_iter().next().map(|a| SocketAddr::new(a, 0)))
-                }
+            pre_resolve(name)?;
+
+            let result = match self {
+                Self::Default() => tokio::net::lookup_host(name).await?.next(),
+                Self::Hickory(r) => r.lookup_ip(name).await?.iter().next().map(|a| SocketAddr::new(a, 0)),
+            };
+
+            if let Some(addr) = &result {
+                post_resolve(name, addr.ip())?;
             }
+
+            Ok(result)
         }
     }
 
@@ -874,14 +876,7 @@ mod dns_resolver {
             let this = self.clone();
             Box::pin(async move {
                 let name = name.as_str();
-
-                pre_resolve(name)?;
                 let result = this.resolve_domain(name).await?;
-                if let Some(addr) = &result {
-                    let ip = addr.ip();
-                    post_resolve(name, ip)?;
-                }
-
                 Ok::<reqwest::dns::Addrs, _>(Box::new(result.into_iter()))
             })
         }

@@ -156,8 +156,8 @@ pub fn is_domain_blacklisted(domain: &str) -> bool {
 
     // If the stored regex is up to date, use it
     if let Some((value, regex)) = &*guard {
-        if value == &config_blacklist && regex.is_match(domain) {
-            return true;
+        if value == &config_blacklist {
+            return regex.is_match(domain);
         }
     }
 
@@ -166,11 +166,7 @@ pub fn is_domain_blacklisted(domain: &str) -> bool {
     let is_match = regex.is_match(domain);
     *guard = Some((config_blacklist, regex));
 
-    if is_match {
-        return true;
-    }
-
-    false
+    is_match
 }
 
 async fn get_icon(domain: &str) -> Option<(Vec<u8>, String)> {
@@ -356,42 +352,48 @@ async fn get_icon_url(domain: &str) -> Result<IconUrlResult, Error> {
     let ssldomain = format!("https://{domain}");
     let httpdomain = format!("http://{domain}");
 
-    // First check the domain as given during the request for both HTTPS and HTTP.
-    let resp = match get_page(&ssldomain).or_else(|_| get_page(&httpdomain)).await {
-        Ok(c) => Ok(c),
-        Err(e) => {
-            let mut sub_resp = Err(e);
+    // First check the domain as given during the request for HTTPS.
+    let resp = match get_page(&ssldomain).await {
+        Err(e) if CustomResolverError::downcast_ref(&e).is_none() => {
+            // If we get an error that is not caused by the blacklist, we retry with HTTP
+            match get_page(&httpdomain).await {
+                mut sub_resp @ Err(_) => {
+                    // When the domain is not an IP, and has more then one dot, remove all subdomains.
+                    let is_ip = domain.parse::<IpAddr>();
+                    if is_ip.is_err() && domain.matches('.').count() > 1 {
+                        let mut domain_parts = domain.split('.');
+                        let base_domain = format!(
+                            "{base}.{tld}",
+                            tld = domain_parts.next_back().unwrap(),
+                            base = domain_parts.next_back().unwrap()
+                        );
+                        if is_valid_domain(&base_domain) {
+                            let sslbase = format!("https://{base_domain}");
+                            let httpbase = format!("http://{base_domain}");
+                            debug!("[get_icon_url]: Trying without subdomains '{base_domain}'");
 
-            // When the domain is not an IP, and has more then one dot, remove all subdomains.
-            let is_ip = domain.parse::<IpAddr>();
-            if is_ip.is_err() && domain.matches('.').count() > 1 {
-                let mut domain_parts = domain.split('.');
-                let base_domain = format!(
-                    "{base}.{tld}",
-                    tld = domain_parts.next_back().unwrap(),
-                    base = domain_parts.next_back().unwrap()
-                );
-                if is_valid_domain(&base_domain) {
-                    let sslbase = format!("https://{base_domain}");
-                    let httpbase = format!("http://{base_domain}");
-                    debug!("[get_icon_url]: Trying without subdomains '{base_domain}'");
+                            sub_resp = get_page(&sslbase).or_else(|_| get_page(&httpbase)).await;
+                        }
 
-                    sub_resp = get_page(&sslbase).or_else(|_| get_page(&httpbase)).await;
+                    // When the domain is not an IP, and has less then 2 dots, try to add www. infront of it.
+                    } else if is_ip.is_err() && domain.matches('.').count() < 2 {
+                        let www_domain = format!("www.{domain}");
+                        if is_valid_domain(&www_domain) {
+                            let sslwww = format!("https://{www_domain}");
+                            let httpwww = format!("http://{www_domain}");
+                            debug!("[get_icon_url]: Trying with www. prefix '{www_domain}'");
+
+                            sub_resp = get_page(&sslwww).or_else(|_| get_page(&httpwww)).await;
+                        }
+                    }
+                    sub_resp
                 }
-
-            // When the domain is not an IP, and has less then 2 dots, try to add www. infront of it.
-            } else if is_ip.is_err() && domain.matches('.').count() < 2 {
-                let www_domain = format!("www.{domain}");
-                if is_valid_domain(&www_domain) {
-                    let sslwww = format!("https://{www_domain}");
-                    let httpwww = format!("http://{www_domain}");
-                    debug!("[get_icon_url]: Trying with www. prefix '{www_domain}'");
-
-                    sub_resp = get_page(&sslwww).or_else(|_| get_page(&httpwww)).await;
-                }
+                res => res,
             }
-            sub_resp
         }
+
+        // If we get a result or a blacklist error, just continue
+        res => res,
     };
 
     // Create the iconlist
