@@ -516,7 +516,7 @@ async fn post_organization_collection_update(
 
     for mut col in collections {
         if col.name.contains(&collection.name) {
-            col.name = col.name.replace(&collection.name, &data.Name);
+            col.name = col.name.replace(&collection.name, &data_name);
             col.save(&mut conn).await?;
         }
     }
