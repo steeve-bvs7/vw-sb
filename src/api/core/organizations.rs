@@ -511,7 +511,10 @@ async fn post_organization_collection_update(
     // Check if the name contains the old name of the collection
     // If so, update the name
     let collections = Collection::find_by_organization(org_id, &mut conn).await;
-    for col in collections {
+
+    let data_name = data.Name.clone();
+
+    for mut col in collections {
         if col.name.contains(&collection.name) {
             col.name = col.name.replace(&collection.name, &data.Name);
             col.save(&mut conn).await?;
