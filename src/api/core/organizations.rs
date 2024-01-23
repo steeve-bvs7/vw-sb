@@ -465,6 +465,10 @@ async fn post_organization_collection_update(
         err!("Collection is not owned by organization");
     }
 
+
+    // Steeve : Save the old name to update all the collections of the organization
+    let data_name = data.Name.clone();
+
     collection.name = data.Name;
     collection.external_id = match data.ExternalId {
         Some(external_id) if !external_id.trim().is_empty() => Some(external_id),
@@ -507,12 +511,10 @@ async fn post_organization_collection_update(
         CollectionUser::save(&org_user.user_uuid, col_id, user.ReadOnly, user.HidePasswords, &mut conn).await?;
     }
 
-    // Loop through all the collections of the organization
+    // Steeve : Loop through all the collections of the organization
     // Check if the name contains the old name of the collection
     // If so, update the name
     let collections = Collection::find_by_organization(org_id, &mut conn).await;
-
-    let data_name = data.Name.clone();
 
     for mut col in collections {
         if col.name.contains(&collection.name) {
