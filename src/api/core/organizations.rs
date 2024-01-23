@@ -507,6 +507,17 @@ async fn post_organization_collection_update(
         CollectionUser::save(&org_user.user_uuid, col_id, user.ReadOnly, user.HidePasswords, &mut conn).await?;
     }
 
+    // Loop through all the collections of the organization
+    // Check if the name contains the old name of the collection
+    // If so, update the name
+    let collections = Collection::find_by_organization(org_id, &mut conn).await;
+    for col in collections {
+        if col.name.contains(&collection.name) {
+            col.name = col.name.replace(&collection.name, &data.Name);
+            col.save(&mut conn).await?;
+        }
+    }
+
     Ok(Json(collection.to_json()))
 }
 
