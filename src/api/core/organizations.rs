@@ -362,6 +362,7 @@ async fn get_org_collections_details(org_id: &str, headers: ManagerHeadersLoose,
         json_object["Groups"] = json!(groups);
         json_object["Object"] = json!("collectionAccessDetails");
         data.push(json_object)
+
     }
 
     Ok(Json(json!({
@@ -477,6 +478,7 @@ async fn post_organization_collection_update(
 
     let collection_external_id = collection.external_id.clone();
 
+    // Steeve : Print the name of the collection
     println!("Collection name : {}", collection.name);
     println!("Collection external_id : {}", collection_external_id.unwrap_or("None".to_string()));
 
