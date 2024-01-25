@@ -475,6 +475,10 @@ async fn post_organization_collection_update(
         _ => None,
     };
 
+    println("Collection name : {}", collection.name);
+    println("Collection external_id : {}", collection.external_id);
+    println("Data ExternalId : {}", data.ExternalId);
+
     collection.save(&mut conn).await?;
 
     log_event(
@@ -519,7 +523,7 @@ async fn post_organization_collection_update(
     for mut col in collections {
         
         // print the name of the collection
-        println!("Collection name : {}", col.name);
+        // println!("Collection name : {}", col.name);
 
         if col.name.contains(&collection.name) {
             col.name = col.name.replace(&collection.name, &data_name);
