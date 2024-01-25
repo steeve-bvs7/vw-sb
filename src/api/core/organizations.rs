@@ -476,7 +476,7 @@ async fn post_organization_collection_update(
     };
 
     println!("Collection name : {}", collection.name);
-    println!("Collection external_id : {}", collection.external_id);
+    println!("Collection external_id : {}", collection.external_id.unwrap_or("None".to_string()));
 
     collection.save(&mut conn).await?;
 
