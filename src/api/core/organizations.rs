@@ -475,9 +475,8 @@ async fn post_organization_collection_update(
         _ => None,
     };
 
-    println("Collection name : {}", collection.name);
-    println("Collection external_id : {}", collection.external_id);
-    println!("Data ExternalId : {}", data.ExternalId);
+    println!("Collection name : {}", collection.name);
+    println!("Collection external_id : {}", collection.external_id);
 
     collection.save(&mut conn).await?;
 
