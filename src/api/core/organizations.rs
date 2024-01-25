@@ -517,6 +517,10 @@ async fn post_organization_collection_update(
     let collections = Collection::find_by_organization(org_id, &mut conn).await;
 
     for mut col in collections {
+        
+        // print the name of the collection
+        println!("Collection name : {}", col.name);
+
         if col.name.contains(&collection.name) {
             col.name = col.name.replace(&collection.name, &data_name);
             col.save(&mut conn).await?;
