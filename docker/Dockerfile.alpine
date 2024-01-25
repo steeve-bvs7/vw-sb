@@ -26,7 +26,7 @@
 #     $ docker image inspect --format "{{.RepoTags}}" docker.io/vaultwarden/web-vault@sha256:cb8e27c241e474d1c162e0fc1909ba0c33f20cf44464d96356e62fdf1afb7eca
 #     [docker.io/vaultwarden/web-vault:v2023.12.0]
 #
-FROM --platform=linux/amd64 docker.io/steevebvs/web-vw-sb@sha256:eba63dd1021b6904cb869951d499c8b2072f0e04f45c145085641f5b2ff5589c as vault
+FROM --platform=linux/amd64 docker.io/steevebvs/web-vw-sb@sha256:bcab81c9e06f7f4156148eb93bfd2a3b9a78d8e5116a3f052dc98caf6e41449d as vault
 
 ########################## ALPINE BUILD IMAGES ##########################
 ## NOTE: The Alpine Base Images do not support other platforms then linux/amd64
